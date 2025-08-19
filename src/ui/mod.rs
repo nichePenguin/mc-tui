@@ -81,7 +81,7 @@ impl UiState {
         }
 
         // Some entities moved
-        if ctx.entity_update {
+        if ctx.entities.update {
             self.entities_moved(ctx).await;
         }
 
@@ -104,8 +104,8 @@ impl UiState {
     async fn entities_moved(&self, ctx: &GlobalContext) {
         let mut entity_state = self.entity_state.write().await;
         let cam_depth = entity_state.camera.1;
-        for entity in &ctx.entities { //TODO keep R/O references in a separate list?
-            if !ctx.entities_moved.contains(&entity.id) {
+        for entity in &ctx.entities.entities { //TODO keep R/O references in a separate list?
+            if !ctx.entities.moved.contains(&entity.id) {
                 continue;
             }
 
@@ -165,7 +165,7 @@ impl UiState {
 
         entity_state.remove_cells(&mut to_remove);
 
-        for entity in &ctx.entities {
+        for entity in &ctx.entities.entities {
             if entity_state.visible.contains(&entity.id) {
                 continue;
             }

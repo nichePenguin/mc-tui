@@ -4,7 +4,7 @@ use tokio::sync::mpsc::Receiver;
 use tokio::sync::Mutex;
 use tokio::net::{TcpStream, tcp::OwnedWriteHalf};
 use tokio::io::AsyncWriteExt;
-use crate::packets::{Packet, write, read};
+use crate::packets::{Packet, write, try_read, read};
 use crate::log;
 use crate::buffered_reader::BufferedReader;
 
@@ -138,10 +138,17 @@ impl Connection {
 
         connection.sender_loop = Some(tokio::task::spawn( async move {
             loop {
-                let packet = read(&mut buf_reader).await;
-                if let Err(_) = tx.send(packet).await {
-                    log::error!("Error in sender loop, channel closed!");
-                    return;
+                match try_read(&mut buf_reader).await {
+                    Err(e) => {
+                        log::error!("Error reading packet, exiting: {}", e);
+                        break;
+                    },
+                    Ok(packet) => {
+                        if let Err(_) = tx.send(packet).await {
+                            log::error!("Error in receiver loop, channel closed!");
+                            break;
+                        }
+                    }
                 }
             }
         }));

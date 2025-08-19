@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::path::PathBuf;
 use miniz_oxide::inflate::decompress_to_vec_zlib;
 use ratatui::buffer::Cell;
 use ratatui::style::Color;
@@ -103,13 +104,33 @@ impl ChunkColumn {
 #[derive(Clone)]
 pub struct World {
     columns: HashMap::<(i32, i32), ChunkColumn>,
+    block_info: Vec<&'static BlockInfo>,
+    pub update: bool
 }
 
 impl World {
-    pub fn new() -> Self {
+    pub fn init(resources_root: PathBuf) -> Self {
         World {
             columns: HashMap::new(),
+            block_info: Self::parse_info(resources_root),
+            update: true
         }
+    }
+
+    fn parse_info(resources_root: PathBuf) -> Vec<&'static BlockInfo>{
+        let block_data_path = resources_root.join("block_data.json");
+        let block_data = json::parse(&std::fs::read_to_string(block_data_path).unwrap()[..]).unwrap();
+        block_data["data"]
+            .members()
+            .map(|block| &*Box::leak(Box::new(BlockInfo { 
+                id: block["id"].as_u16().unwrap_or(std::u16::MAX),
+                is_solid: block["isSolid"].as_bool().unwrap_or(false)
+            }))).collect()
+    }
+
+    pub fn get_block_info(&self, pos: (i32, i32, i32)) -> Option<&'static BlockInfo> {
+        let block_id = self.get_block(pos).id;
+        self.block_info.iter().find(|b| b.id == block_id).map(|e| *e)
     }
 
     pub async fn get_slice_render(
@@ -197,6 +218,7 @@ impl World {
             &[data.metainfo],
             true,
             data.ground_up_continuous);
+        self.update = true;
     }
 
     pub fn set_chunk_bulk(&mut self, data: &ChunkDataBulk) {
@@ -205,6 +227,7 @@ impl World {
             &data.metainfo[..],
             data.has_skylight,
             true);
+        self.update = true;
     }
 
     pub fn set_block_multiple(&mut self, data: &MultiBlockChangeData) {
@@ -228,6 +251,7 @@ impl World {
             block.metadata = meta;
             column.set_block((x as i32 + chunk_x*16, y as i32, z as i32 + chunk_z*16), block)
         }
+        self.update = true;
     }
 
     pub fn set_block(&mut self, x: i32, z: i32, y: u8, block_type: u16, block_meta: u8) {
@@ -241,6 +265,7 @@ impl World {
         block.id = block_type;
         block.metadata = block_meta;
         column.set_block((x, y as i32, z), block);
+        self.update = true;
     }
 
     pub fn parse(

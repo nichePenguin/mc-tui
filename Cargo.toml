@@ -1,0 +1,20 @@
+[package]
+name = "mc-tui"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+miniz_oxide = "0.8.2"
+ratatui = { version = "0.29.0", features = ["unstable-widget-ref"] }
+crossterm = "0.28.1"
+#color-eyre = "0.6.3"
+
+chrono = "0.4.41"
+openssl = "0.10.73"
+base64 = "0.22.1"
+tokio = { version = "1.46.1", features = ["full"] }
+
+json = "0.12.4"
+
+[profile.release]
+debug = true

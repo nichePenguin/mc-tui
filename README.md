@@ -1,8 +1,7 @@
 # mc-tui
 Client terminal user interface for Minecraft 1.5.2 server, in the style of Dwarf Fortress (with multiple Dwarves!)
 
-[entities.gif](https://github.com/nichePenguin/nichePenguin/blob/master/readme/entities.gif)
-
+[entities.gif](https://github.com/nichePenguin/mc-tui/blob/main/readme/entities.gif)
 ## Currently present:
 * Full protocol implemented
 * Supports multiple client sessions
